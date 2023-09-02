@@ -1,4 +1,4 @@
-from flask import render_template, flash, request, redirect, url_for, session
+from flask import render_template, flash, request, redirect, url_for, session,request
 from flask_login import current_user, login_user, logout_user
 
 from app import app, db
@@ -6,6 +6,8 @@ from app.forms import LoginForm, SignUpForm, ButtonForm
 from app.models import User
 
 from werkzeug.urls import url_parse
+
+from urllib.parse import urlparse, urljoin
 
 
 @app.route("/")
@@ -21,9 +23,19 @@ def index():
 
 
 @app.route("/login", methods=["GET", "POST"])
+
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
+
+
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
+    
+    # Get the redirect_back parameter from the URL
+    redirect_back = request.args.get("redirect_back")
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -34,7 +46,12 @@ def login():
         session["username"] = user.username
         session["user_id"] = user.id
         flash("Login successful")
-        return redirect(url_for("index"))
+
+         # Check if redirect_back exists and is a valid URL
+        if redirect_back and is_safe_url(redirect_back):
+            return redirect(redirect_back)
+        else:
+            return redirect(url_for("index"))  # Redirect to the default page if redirect_back is invalid
     return render_template("login.html", title="Sign In", form=form)
 
 

@@ -12,7 +12,9 @@
       {{ form.password(size=18) }}
     </p>
     <p>{{ form.remember_me }} {{ form.remember_me.label }}</p>
-    <p>{{ form.submit(class_='login-btn') }}</p>
+    <a href="{{ url_for('login', redirect_back=request.full_path) }}">
+      <p>{{ form.submit(class_='login-btn') }}</p>
+    </a>
   </form>
   <p><a href="{{url_for('signup')}}">Sign up here!</a></p>
 </div>
